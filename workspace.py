@@ -25,6 +25,7 @@ from blocks.bricks.lookup import LookupTable
 from blocks.bricks.recurrent import SimpleRecurrent, BaseRecurrent, recurrent
 from blocks.bricks.attention import AbstractAttention
 from blocks.bricks.sequences import Sequence
+from blocks.bricks.parallel import Fork, Merge
 from blocks.bricks.cost import CategoricalCrossEntropy
 from blocks.bricks.cost import MisclassificationRate
 from blocks.bricks.sequence_generators import (SequenceGenerator,
