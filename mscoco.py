@@ -8,7 +8,6 @@ from blocks.roles import WEIGHT, add_role
 
 from contrib.imagenet import ImagenetModel
 from workspace import *
-from utils import transpose_stream
 
 
 def imagenet_model_func(matlab_filepath):
@@ -67,58 +66,6 @@ class ImageCaptionAttention(AbstractAttention):
         return attended
 
 
-class ImageContextRecurrent(BaseRecurrent, Initializable):
-    @lazy(allocation=['dim'])
-    def __init__(self, dim, activation, **kwargs):
-        self.dim = dim
-        # kwargs.setdefault('children', []).extend(children)
-        # children = [] + children
-        super(ImageContextRecurrent, self).__init__(**kwargs)
-        # super().__init__(children=children, **kwargs)
-        # This is a dirty hack, dunno why children cannot be passed as a kwarg
-        self.children = [activation] + kwargs.get('children', [])
-
-    @property
-    def W(self):
-        return self.parameters[0]
-
-    def get_dim(self, name):
-        if name == 'mask':
-            return 0
-        if name in (ImageContextRecurrent.apply.sequences +
-                    ImageContextRecurrent.apply.states):
-            return self.dim
-        return super(ImageContextRecurrent, self).get_dim(name)
-
-    def _allocate(self):
-        self.parameters.append(shared_floatx_nans((self.dim, self.dim), name="W"))
-        add_role(self.parameters[0], WEIGHT)
-
-        # NB no parameters for initial state
-
-    def _initialize(self):
-        self.weights_init.initialize(self.W, self.rng)
-
-    @recurrent(sequences=['inputs', 'mask'], states=['states'],
-               outputs=['states'], contexts=['context'])
-    def apply(self, inputs, states, mask=None, **kwargs):
-        next_states = inputs + tensor.dot(states, self.W)
-        next_states = self.children[0].apply(next_states)
-        if mask:
-            next_states = (mask[:, None] * next_states +
-                           (1 - mask[:, None]) * states)
-        return next_states
-
-    @application(contexts=["context"])
-    def initial_states(self, batch_size, *args, **kwargs):
-        init = kwargs["context"]
-        return init.T
-
-    @initial_states.property('outputs')
-    def initial_states_outputs(self):
-        return self.apply.states
-
-
 class ContextSimpleRecurrent(SimpleRecurrent):
     """very simple recurrent that's context-aware"""
 
@@ -154,20 +101,11 @@ class ContextSimpleRecurrent(SimpleRecurrent):
         return super(ContextSimpleRecurrent, self).get_dim(name)
 
 
-class ContextReadout(Readout):
-    """Context-aware Readout"""
-
-    def get_dim(self, name):
-        if name == "context":
-            return self.merge.input_dims['context']
-        return super(ContextReadout, self).get_dim(name)
-
-
 def train_rnn():
 
     # coco_hd5_path = "/media/data/image_classification/coco.hdf5"
     coco_hd5_path = "/projects/korpora/mscoco/coco.hdf5"
-    coco_dataset = CocoHD5Dataset(coco_hd5_path, subset=range(10))
+    coco_dataset = CocoHD5Dataset(coco_hd5_path)
     stream = mscoco_stream(coco_dataset, 50)
 
     # coco_hd5_path = "/media/data/image_classification/cocotalk.json"
@@ -183,12 +121,12 @@ def train_rnn():
                               name='feedback')
     emitter = SoftmaxEmitter(name="emitter")
     merger = Merge(input_names=["states", "context"], input_dims={"context": 1000})
-    readout = ContextReadout(readout_dim=vocab_size,
-                             source_names=["states", "context"],
-                             merge=merger,
-                             emitter=emitter,
-                             feedback_brick=feedback,
-                             name='readout')
+    readout = Readout(readout_dim=vocab_size,
+                      source_names=["states", "context"],
+                      merge=merger,
+                      emitter=emitter,
+                      feedback_brick=feedback,
+                      name='readout')
 
     transition = ContextSimpleRecurrent(name="transition",
                                         dim=hidden_size,
@@ -222,7 +160,7 @@ def train_rnn():
                          algorithm=optimizer,
                          extensions=[
                              monitor,
-                             FinishAfter(after_n_epochs=2),
+                             FinishAfter(after_n_epochs=5),
                              Printing(on_interrupt=True),
                              Timing(on_interrupt=True),
                              Checkpoint(save_path,
