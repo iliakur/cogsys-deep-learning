@@ -146,6 +146,11 @@ class ContextSimpleRecurrent(SimpleRecurrent):
                            (1 - mask[:, None]) * states)
         return next_states
 
+    def get_dim(self, name):
+        if name == "context":
+            return self.merge.input_dims['context']
+        return super(ContextSimpleRecurrent, self).get_dim(name)
+
 
 class ContextReadout(Readout):
     """Context-aware Readout"""
