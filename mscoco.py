@@ -124,7 +124,7 @@ class ContextReadout(Readout):
     def get_dim(self, name):
         if name == "context":
             return self.merge.input_dims['context']
-        return super(ImageContextRecurrent, self).get_dim(name)
+        return super(ContextReadout, self).get_dim(name)
 
 
 def train_rnn():
