@@ -41,7 +41,7 @@ class CocoHD5Dataset(Dataset):
         if state is not None or request is None:
             raise ValueError
 
-        return (self.images[request], self.sequences[request])
+        return (self.images[request], self.sequences[request].astype("i"))
 
 
 def mscoco_stream(dataset, batch_size):
@@ -119,14 +119,16 @@ class ImageContextRecurrent(BaseRecurrent, Initializable):
 
 def train_rnn():
 
-    coco_hd5_path = "/media/data/image_classification/coco.hdf5"
+    # coco_hd5_path = "/media/data/image_classification/coco.hdf5"
+    coco_hd5_path = "/projects/korpora/mscoco/coco.hdf5"
     coco_dataset = CocoHD5Dataset(coco_hd5_path, subset=range(10))
     stream = mscoco_stream(coco_dataset, 50)
 
-    coco_json_path = '/media/data/image_classification/cocotalk.json'
+    # coco_hd5_path = "/media/data/image_classification/cocotalk.json"
+    coco_json_path = '/projects/korpora/mscoco/coco/cocotalk.json'
     coco_vocab = mscoco_read_vocab(coco_json_path)
 
-    vocab_size = len(coco_vocab)
+    vocab_size = len(coco_vocab) + 1
     hidden_size = 512
 
     feedback = LookupFeedback(vocab_size,
@@ -173,7 +175,7 @@ def train_rnn():
     # Main Loop
     save_path = 'mscoco-rnn-{}.tar'.format(hidden_size)
     main_loop = MainLoop(model=Model(cost),
-                         data_stream=brown_train_stream,
+                         data_stream=stream,
                          algorithm=optimizer,
                          extensions=[
                              monitor,
