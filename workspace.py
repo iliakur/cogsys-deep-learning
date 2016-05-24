@@ -19,8 +19,11 @@ from blocks.bricks import Linear
 from blocks.bricks import NDimensionalSoftmax
 from blocks.bricks import Rectifier
 from blocks.bricks import Bias
+from blocks.bricks import Initializable
+from blocks.bricks.base import application, lazy
 from blocks.bricks.lookup import LookupTable
-from blocks.bricks.recurrent import SimpleRecurrent
+from blocks.bricks.recurrent import SimpleRecurrent, BaseRecurrent, recurrent
+from blocks.bricks.attention import AbstractAttention
 from blocks.bricks.sequences import Sequence
 from blocks.bricks.cost import CategoricalCrossEntropy
 from blocks.bricks.cost import MisclassificationRate
@@ -52,3 +55,7 @@ from blocks_extras.extensions.plot import Plot
 from blocks.serialization import dump, load
 
 stream_log_handler = logging.StreamHandler()
+
+
+def load_tar(file_path):
+    return load(open(file_path, 'rb'))
