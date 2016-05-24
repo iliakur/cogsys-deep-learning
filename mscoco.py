@@ -146,12 +146,12 @@ def train_rnn():
                               name='feedback')
     emitter = SoftmaxEmitter(name="emitter")
     merger = Merge(input_names=["states", "context"], input_dims={"context": 1000})
-    readout = Readout(readout_dim=vocab_size,
-                      source_names=["states", "context"],
-                      merge=merger,
-                      emitter=emitter,
-                      feedback_brick=feedback,
-                      name='readout')
+    readout = ContextReadout(readout_dim=vocab_size,
+                             source_names=["states", "context"],
+                             merge=merger,
+                             emitter=emitter,
+                             feedback_brick=feedback,
+                             name='readout')
 
     transition = SimpleRecurrent(name="transition",
                                  dim=hidden_size,
