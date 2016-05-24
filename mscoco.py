@@ -41,13 +41,14 @@ class CocoHD5Dataset(Dataset):
         if state is not None or request is None:
             raise ValueError
 
-        return (self.images[request], self.sequences[request].astype("i"))
+        return (self.images[request], self.sequences[request].astype("i").T)
 
 
 def mscoco_stream(dataset, batch_size):
     batch_scheme = SequentialScheme(dataset.num_examples, batch_size=batch_size)
     just_stream = DataStream.default_stream(dataset, iteration_scheme=batch_scheme)
-    return Mapping(just_stream, transpose_stream)
+    return just_stream
+    # return Mapping(just_stream, transpose_stream)
 
 
 def mscoco_read_vocab(f_path):
@@ -136,17 +137,17 @@ def train_rnn():
                               name='feedback')
     emitter = SoftmaxEmitter(name="emitter")
     readout = Readout(readout_dim=vocab_size,
-                      source_names=["states"],
+                      source_names=["states", "context"],
                       emitter=emitter,
                       feedback_brick=feedback,
                       name='readout')
 
-    # transition = SimpleRecurrent(name="transition",
-    #                              dim=hidden_size,
-    #                              activation=Rectifier())
-    transition = ImageContextRecurrent(name="transition",
-                                       dim=hidden_size,
-                                       activation=Rectifier())
+    transition = SimpleRecurrent(name="transition",
+                                 dim=hidden_size,
+                                 activation=Rectifier())
+    # transition = ImageContextRecurrent(name="transition",
+    #                                    dim=hidden_size,
+    #                                    activation=Rectifier())
     # attention = ImageCaptionAttention(['states'], [hidden_size], 1000)
 
     generator = SequenceGenerator(readout,
