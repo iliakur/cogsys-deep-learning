@@ -3,6 +3,7 @@ import json
 
 import h5py
 from blocks.utils import shared_floatx_nans
+from blocks.utils import dict_union, dict_subset
 from blocks.roles import WEIGHT, add_role
 
 from contrib.imagenet import ImagenetModel
@@ -118,6 +119,34 @@ class ImageContextRecurrent(BaseRecurrent, Initializable):
         return self.apply.states
 
 
+class ContextSimpleRecurrent(SimpleRecurrent):
+    """very simple recurrent that's context-aware"""
+
+    @recurrent(sequences=['inputs', 'mask'], states=['states'],
+               outputs=['states'], contexts=['context'])
+    def apply(self, inputs, states, mask=None):
+        """Apply the simple transition.
+
+        Parameters
+        ----------
+        inputs : :class:`~tensor.TensorVariable`
+            The 2D inputs, in the shape (batch, features).
+        states : :class:`~tensor.TensorVariable`
+            The 2D states, in the shape (batch, features).
+        mask : :class:`~tensor.TensorVariable`
+            A 1D binary array in the shape (batch,) which is 1 if
+            there is data available, 0 if not. Assumed to be 1-s
+            only if not given.
+
+        """
+        next_states = inputs + tensor.dot(states, self.W)
+        next_states = self.children[0].apply(next_states)
+        if mask:
+            next_states = (mask[:, None] * next_states +
+                           (1 - mask[:, None]) * states)
+        return next_states
+
+
 class ContextReadout(Readout):
     """Context-aware Readout"""
 
@@ -138,6 +167,7 @@ def train_rnn():
     coco_json_path = '/projects/korpora/mscoco/coco/cocotalk.json'
     coco_vocab = mscoco_read_vocab(coco_json_path)
 
+    # zeros don't correspond to actual words, so we need to make room for one more index
     vocab_size = len(coco_vocab) + 1
     hidden_size = 512
 
@@ -153,21 +183,15 @@ def train_rnn():
                              feedback_brick=feedback,
                              name='readout')
 
-    transition = SimpleRecurrent(name="transition",
-                                 dim=hidden_size,
-                                 activation=Rectifier())
-    # transition = ImageContextRecurrent(name="transition",
-    #                                    dim=hidden_size,
-    #                                    activation=Rectifier())
-    # attention = ImageCaptionAttention(['states'], [hidden_size], 1000)
+    transition = ContextSimpleRecurrent(name="transition",
+                                        dim=hidden_size,
+                                        activation=Rectifier())
 
     generator = SequenceGenerator(readout,
                                   transition,
                                   weights_init=IsotropicGaussian(0.01),
                                   biases_init=Constant(0),
-                                  name='generator',
-                                  # attention=attention
-                                  )
+                                  name='generator')
     generator.initialize()
 
     sequences = tensor.imatrix('sequence')
