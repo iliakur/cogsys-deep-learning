@@ -118,6 +118,15 @@ class ImageContextRecurrent(BaseRecurrent, Initializable):
         return self.apply.states
 
 
+class ContextReadout(Readout):
+    """Context-aware Readout"""
+
+    def get_dim(self, name):
+        if name == "context":
+            return self.merge.input_dims['context']
+        return Readout.get_dim(name)
+
+
 def train_rnn():
 
     # coco_hd5_path = "/media/data/image_classification/coco.hdf5"
@@ -136,8 +145,10 @@ def train_rnn():
                               feedback_dim=vocab_size,
                               name='feedback')
     emitter = SoftmaxEmitter(name="emitter")
+    merger = Merge(input_names=["states", "context"], input_dims={"context": 1000})
     readout = Readout(readout_dim=vocab_size,
                       source_names=["states", "context"],
+                      merge=merger,
                       emitter=emitter,
                       feedback_brick=feedback,
                       name='readout')
