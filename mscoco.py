@@ -148,7 +148,8 @@ class ContextSimpleRecurrent(SimpleRecurrent):
 
     def get_dim(self, name):
         if name == "context":
-            return self.merge.input_dims['context']
+            # this is a dirty hack!
+            return self.parents[0].parents[0].readout.merge.input_dims['context']
         return super(ContextSimpleRecurrent, self).get_dim(name)
 
 
