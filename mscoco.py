@@ -140,7 +140,7 @@ def train_rnn():
     generator.initialize()
 
     sequences = tensor.imatrix('sequence')
-    images = tensor.dmatrix('image')
+    images = tensor.matrix('image')
     cost = generator.cost(sequences, context=images)
     graph = ComputationGraph(cost)
     # Cost optimization
