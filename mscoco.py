@@ -163,8 +163,8 @@ def train_rnn():
                          extensions=[
                              gradient_monitoring,
                              FinishAfter(after_n_epochs=5),
-                             Printing(on_interrupt=True),
                              Timing(on_interrupt=True),
+                             Printing(on_interrupt=True),
                              Checkpoint(save_path,
                                         every_n_batches=500,
                                         on_interrupt=True)
