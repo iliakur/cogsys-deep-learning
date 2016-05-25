@@ -48,9 +48,11 @@ from fuel.transformers import Padding, Mapping, Batch
 # Main Loop
 from blocks.main_loop import MainLoop
 from blocks.extensions import FinishAfter, Printing, Timing
-from blocks.extensions.monitoring import DataStreamMonitoring
+from blocks.extensions.monitoring import DataStreamMonitoring, TrainingDataMonitoring
 from blocks.extensions.saveload import Checkpoint
 from blocks_extras.extensions.plot import Plot
+
+from blocks.monitoring import aggregation
 
 # (De)serialization
 from blocks.serialization import dump, load

@@ -41,7 +41,7 @@ class CocoHD5Dataset(Dataset):
         if state is not None or request is None:
             raise ValueError
 
-        return (self.images[request], self.sequences[request].astype("i").T)
+        return (self.images[request].astype("f"), self.sequences[request].astype("i").T)
 
 
 def mscoco_stream(dataset, batch_size):
@@ -149,9 +149,11 @@ def train_rnn():
                                 step_rule=Adam())
 
     # Monitoring
-    monitor = DataStreamMonitoring(variables=[cost],
-                                   data_stream=stream,
-                                   prefix="mscoco")
+    # monitor = DataStreamMonitoring(variables=[cost],
+    #                                data_stream=stream,
+    #                                prefix="mscoco")
+    gradient = aggregation.mean(optimizer.total_gradient_norm)
+    gradient_monitoring = TrainingDataMonitoring([gradient], every_n_batches=500)
 
     # Main Loop
     save_path = 'mscoco-rnn-{}.tar'.format(hidden_size)
@@ -159,7 +161,7 @@ def train_rnn():
                          data_stream=stream,
                          algorithm=optimizer,
                          extensions=[
-                             monitor,
+                             gradient_monitoring,
                              FinishAfter(after_n_epochs=5),
                              Printing(on_interrupt=True),
                              Timing(on_interrupt=True),
