@@ -13,7 +13,7 @@ from workspace import *
 def imagenet_model_func(matlab_filepath):
     vgg_vd_model = ImagenetModel(matlab_filepath)
     input_var = tensor.tensor4("input")
-    output_1k = Sequence(br.apply for br in vgg_vd_model.layers).apply(input_var)
+    output_1k = Sequence([br.apply for br in vgg_vd_model.layers]).apply(input_var)
     operable_model = Model(output_1k)
     return operable_model.get_top_bricks()
     # return theano.function([input_var], output_1k)
@@ -164,6 +164,5 @@ def train_rnn():
 
 
 if __name__ == '__main__':
-    # matlab_filepath = sys.argv[1]
-    # print(imagenet_model_func(matlab_filepath))
-    train_rnn()
+    matlab_filepath = "/projects/korpora/mscoco/coco/imagenet-vgg-verydeep-16.mat"
+    print(imagenet_model_func(matlab_filepath))
