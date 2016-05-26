@@ -18,6 +18,7 @@ from blocks.model import Model
 from blocks.bricks import Linear
 from blocks.bricks import NDimensionalSoftmax
 from blocks.bricks import Rectifier
+from blocks.bricks import Tanh
 from blocks.bricks import Bias
 from blocks.bricks import Initializable
 from blocks.bricks.base import application, lazy
