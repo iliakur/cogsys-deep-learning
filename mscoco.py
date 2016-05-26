@@ -13,10 +13,12 @@ from workspace import *
 def imagenet_model_func(matlab_filepath):
     vgg_vd_model = ImagenetModel(matlab_filepath)
     input_var = tensor.tensor4("input")
-    output_1k = Sequence([br.apply for br in vgg_vd_model.layers]).apply(input_var)
-    operable_model = Model(output_1k)
-    return operable_model.get_theano_function(allow_input_downcast=True)
-    # return theano.function([input_var], output_1k)
+    output_1k = vgg_vd_model.layers[0].apply(input_var)
+    for layer in vgg_vd_model.layers[1:]:
+        output_1k = layer.apply(output_1k)
+    # operable_model = Model(output_1k)
+    # return operable_model.get_theano_function(allow_input_downcast=True)
+    return theano.function([input_var], output_1k, allow_input_downcast=True)
     # return vgg_vd_model
 
 
