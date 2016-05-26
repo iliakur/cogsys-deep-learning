@@ -131,8 +131,8 @@ class ContextRecurrent(SimpleRecurrent):
     def get_dim(self, name):
         if name == "context":
             # extending dim behavior to "context" name
-            return self.dim
-        return super(ContextSimpleRecurrent, self).get_dim(name)
+            return 1000
+        return super(ContextRecurrent, self).get_dim(name)
 
 
 def train_rnn():
