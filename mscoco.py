@@ -169,6 +169,6 @@ if __name__ == '__main__':
 
     cocotalk_h5_path = "/projects/korpora/mscoco/coco/cocotalk.h5"
     cocotalk_h5 = h5py.File(cocotalk_h5_path)
-    test_images = hd5_file['images'][:2]
+    test_images = cocotalk_h5['images'][:2]
 
     print(cnn_func(test_images))
