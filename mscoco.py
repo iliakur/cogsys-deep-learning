@@ -139,7 +139,7 @@ def train_rnn():
 
     # coco_hd5_path = "/media/data/image_classification/coco.hdf5"
     coco_hd5_path = "/projects/korpora/mscoco/coco.hdf5"
-    coco_dataset = CocoHD5Dataset(coco_hd5_path, range(10))
+    coco_dataset = CocoHD5Dataset(coco_hd5_path, subset=range(10))
     stream = mscoco_stream(coco_dataset, 50)
 
     # coco_hd5_path = "/media/data/image_classification/cocotalk.json"
@@ -157,7 +157,7 @@ def train_rnn():
     merger = Merge(input_names=["states", "context"], input_dims={"context": 1000})
     readout = Readout(readout_dim=vocab_size,
                       source_names=["states", "context"],
-                      source_names=["states"],
+                      # source_names=["states"],
                       merge=merger,
                       emitter=emitter,
                       feedback_brick=feedback,
