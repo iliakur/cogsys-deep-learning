@@ -139,8 +139,8 @@ def train_rnn():
 
     # coco_hd5_path = "/media/data/image_classification/coco.hdf5"
     coco_hd5_path = "/projects/korpora/mscoco/coco.hdf5"
-    coco_dataset = CocoHD5Dataset(coco_hd5_path, subset=range(10))
-    stream = mscoco_stream(coco_dataset, 50)
+    coco_dataset = CocoHD5Dataset(coco_hd5_path, subset=range(100))
+    stream = mscoco_stream(coco_dataset, 5)
 
     # coco_hd5_path = "/media/data/image_classification/cocotalk.json"
     coco_json_path = '/projects/korpora/mscoco/coco/cocotalk.json'
@@ -188,7 +188,7 @@ def train_rnn():
     #                                data_stream=stream,
     #                                prefix="mscoco")
     gradient = aggregation.mean(optimizer.total_gradient_norm)
-    gradient_monitoring = TrainingDataMonitoring([gradient, cost], every_n_batches=500)
+    gradient_monitoring = TrainingDataMonitoring([gradient, cost], every_n_batches=5)
 
     # Main Loop
     save_path = 'mscoco-rnn-{}-2.tar'.format(hidden_size)
@@ -198,11 +198,12 @@ def train_rnn():
                          algorithm=optimizer,
                          extensions=[FinishAfter(after_n_epochs=1),
                                      gradient_monitoring,
-                                     Timing(on_interrupt=True),
-                                     Printing(on_interrupt=True, every_n_batches=500),
+                                     Timing(after_epoch=True),
+                                     Printing(on_interrupt=True, every_n_batches=5),
                                      Checkpoint(save_path,
                                                 every_n_batches=500,
-                                                on_interrupt=True)
+                                                on_interrupt=True,
+                                                after_training=True)
                                      # Plot("Example Plot", channels=[['test_cost_simple_xentropy', "test_error_rate"]])
                                      ])
     main_loop.run()
