@@ -102,7 +102,7 @@ class ContextRecurrent(SimpleRecurrent):
 
     def _allocate(self):
         super(ContextRecurrent, self)._allocate()
-        R = shared_floatx_nans((self.dim, self.dim), name="R")
+        R = shared_floatx_nans((1000, self.dim), name="R")
         self.parameters.append(R)
         add_role(self.parameters[2], WEIGHT)
 
@@ -154,16 +154,16 @@ def train_rnn():
                               feedback_dim=vocab_size,
                               name='feedback')
     emitter = SoftmaxEmitter(name="emitter")
-    merger = Merge(input_names=["states", "context"], input_dims={"context": 1000})
+    # merger = Merge(input_names=["states", "context"], input_dims={"context": 1000})
     readout = Readout(readout_dim=vocab_size,
-                      source_names=["states", "context"],
-                      # source_names=["states"],
+                      # source_names=["states", "context"],
+                      source_names=["states"],
                       merge=merger,
                       emitter=emitter,
                       feedback_brick=feedback,
                       name='readout')
 
-    transition = ContextSimpleRecurrent(name="transition",
+    transition = ContextRecurrent(name="transition",
                                   dim=hidden_size,
                                   activation=Tanh())
 
@@ -188,7 +188,7 @@ def train_rnn():
     #                                data_stream=stream,
     #                                prefix="mscoco")
     gradient = aggregation.mean(optimizer.total_gradient_norm)
-    gradient_monitoring = TrainingDataMonitoring([gradient, cost], every_n_batches=500)
+    gradient_monitoring = DataStreamMonitoring([gradient, cost], every_n_batches=500)
 
     # Main Loop
     save_path = 'mscoco-rnn-{}-2.tar'.format(hidden_size)
