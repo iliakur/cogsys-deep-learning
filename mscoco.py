@@ -15,7 +15,7 @@ def imagenet_model_func(matlab_filepath):
     input_var = tensor.tensor4("input")
     output_1k = Sequence([br.apply for br in vgg_vd_model.layers]).apply(input_var)
     operable_model = Model(output_1k)
-    return operable_model.get_top_bricks()
+    return operable_model.get_theano_function()
     # return theano.function([input_var], output_1k)
     # return vgg_vd_model
 
