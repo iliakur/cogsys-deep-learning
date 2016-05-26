@@ -99,15 +99,47 @@ class ContextRecurrent(SimpleRecurrent):
     # - _allocate and _initialize need to introduce another weight matrix
     # - get dim is now nice
     # - apply only needs to add the context
-    pass
 
+    def _allocate(self):
+        super(ContextRecurrent, self)._allocate()
+        R = shared_floatx_nans((self.dim, self.dim), name="R")
+        self.parameters.append(R)
+        add_role(self.parameters[2], WEIGHT)
+
+    def _initialize(self):
+        self.weights_init.initialize(self.R, self.rng)
+        super(ContextRecurrent, self)._allocate()
+
+    @property
+    def R(self):
+        return self.parameters[2]
+
+    @recurrent(sequences=['inputs', 'mask'], states=['states'],
+               outputs=['states'], contexts=['context'])
+    def apply(self, inputs, states, context, mask=None):
+        """Same as SimpleRecurrent.apply except with an additional argument:
+
+        context : :class:`~tensor.TensorVariable`
+        """
+        next_states = inputs + tensor.dot(states, self.W) + tensor.dot(context, self.R)
+        next_states = self.children[0].apply(next_states)
+        if mask:
+            next_states = (mask[:, None] * next_states +
+                           (1 - mask[:, None]) * states)
+        return next_states
+
+    def get_dim(self, name):
+        if name == "context":
+            # extending dim behavior to "context" name
+            return self.dim
+        return super(ContextSimpleRecurrent, self).get_dim(name)
 
 
 def train_rnn():
 
     # coco_hd5_path = "/media/data/image_classification/coco.hdf5"
     coco_hd5_path = "/projects/korpora/mscoco/coco.hdf5"
-    coco_dataset = CocoHD5Dataset(coco_hd5_path)
+    coco_dataset = CocoHD5Dataset(coco_hd5_path, range(10))
     stream = mscoco_stream(coco_dataset, 50)
 
     # coco_hd5_path = "/media/data/image_classification/cocotalk.json"
@@ -122,17 +154,18 @@ def train_rnn():
                               feedback_dim=vocab_size,
                               name='feedback')
     emitter = SoftmaxEmitter(name="emitter")
-    merger = Merge(input_names=["states", "context"], input_dims={"context": 1000})
+    # merger = Merge(input_names=["states", "context"], input_dims={"context": 1000})
     readout = Readout(readout_dim=vocab_size,
-                      source_names=["states", "context"],
-                      merge=merger,
+                      # source_names=["states", "context"],
+                      source_names=["states"],
+                      # merge=merger,
                       emitter=emitter,
                       feedback_brick=feedback,
                       name='readout')
 
-    transition = ContextSimpleRecurrent(name="transition",
-                                        dim=hidden_size,
-                                        activation=Rectifier())
+    transition = ContextRecurrent(name="transition",
+                                  dim=hidden_size,
+                                  activation=Rectifier())
 
     generator = SequenceGenerator(readout,
                                   transition,
@@ -155,23 +188,23 @@ def train_rnn():
     #                                data_stream=stream,
     #                                prefix="mscoco")
     gradient = aggregation.mean(optimizer.total_gradient_norm)
-    gradient_monitoring = TrainingDataMonitoring([gradient], every_n_batches=500)
+    gradient_monitoring = TrainingDataMonitoring([gradient, cost], every_n_batches=500)
 
     # Main Loop
-    save_path = 'mscoco-rnn-{}.tar'.format(hidden_size)
+    # save_path = 'mscoco-rnn-{}.tar'.format(hidden_size)
+    save_path = "test-context.tar"
     main_loop = MainLoop(model=Model(cost),
                          data_stream=stream,
                          algorithm=optimizer,
-                         extensions=[
-                             gradient_monitoring,
-                             FinishAfter(after_n_epochs=5),
-                             Timing(on_interrupt=True),
-                             Printing(on_interrupt=True),
-                             Checkpoint(save_path,
-                                        every_n_batches=500,
-                                        on_interrupt=True)
-                             # Plot("Example Plot", channels=[['test_cost_simple_xentropy', "test_error_rate"]])
-    ])
+                         extensions=[gradient_monitoring,
+                                     FinishAfter(after_n_epochs=1),
+                                     Timing(on_interrupt=True),
+                                     Printing(on_interrupt=True),
+                                     Checkpoint(save_path,
+                                                every_n_batches=500,
+                                                on_interrupt=True)
+                                     # Plot("Example Plot", channels=[['test_cost_simple_xentropy', "test_error_rate"]])
+                                     ])
     main_loop.run()
 
 
