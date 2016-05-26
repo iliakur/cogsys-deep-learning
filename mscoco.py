@@ -154,18 +154,18 @@ def train_rnn():
                               feedback_dim=vocab_size,
                               name='feedback')
     emitter = SoftmaxEmitter(name="emitter")
-    # merger = Merge(input_names=["states", "context"], input_dims={"context": 1000})
+    merger = Merge(input_names=["states", "context"], input_dims={"context": 1000})
     readout = Readout(readout_dim=vocab_size,
-                      # source_names=["states", "context"],
+                      source_names=["states", "context"],
                       source_names=["states"],
-                      # merge=merger,
+                      merge=merger,
                       emitter=emitter,
                       feedback_brick=feedback,
                       name='readout')
 
     transition = ContextRecurrent(name="transition",
                                   dim=hidden_size,
-                                  activation=Rectifier())
+                                  activation=Tanh())
 
     generator = SequenceGenerator(readout,
                                   transition,
@@ -191,8 +191,8 @@ def train_rnn():
     gradient_monitoring = TrainingDataMonitoring([gradient, cost], every_n_batches=500)
 
     # Main Loop
-    # save_path = 'mscoco-rnn-{}.tar'.format(hidden_size)
-    save_path = "test-context.tar"
+    save_path = 'mscoco-rnn-{}-2.tar'.format(hidden_size)
+    # save_path = "test-context.tar"
     main_loop = MainLoop(model=Model(cost),
                          data_stream=stream,
                          algorithm=optimizer,
