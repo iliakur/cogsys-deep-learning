@@ -165,4 +165,10 @@ def train_rnn():
 
 if __name__ == '__main__':
     matlab_filepath = "/projects/korpora/mscoco/coco/imagenet-vgg-verydeep-16.mat"
-    print(imagenet_model_func(matlab_filepath))
+    cnn_func = imagenet_model_func(matlab_filepath)
+
+    cocotalk_h5_path = "/projects/korpora/mscoco/coco/cocotalk.h5"
+    cocotalk_h5 = h5py.File(cocotalk_h5_path)
+    test_images = hd5_file['images'][:2]
+
+    print(cnn_func(test_images))
