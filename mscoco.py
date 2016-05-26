@@ -199,7 +199,7 @@ def train_rnn():
                          extensions=[FinishAfter(after_n_epochs=1),
                                      gradient_monitoring,
                                      Timing(on_interrupt=True),
-                                     Printing(on_interrupt=True),
+                                     Printing(on_interrupt=True, every_n_batches=500),
                                      Checkpoint(save_path,
                                                 every_n_batches=500,
                                                 on_interrupt=True)
