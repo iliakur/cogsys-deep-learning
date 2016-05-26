@@ -91,6 +91,16 @@ class ContextSimpleRecurrent(SimpleRecurrent):
         return super(ContextSimpleRecurrent, self).get_dim(name)
 
 
+class ContextRecurrent(SimpleRecurrent):
+    """Fully context-aware recurrent brick"""
+    # todo:
+    # - _allocate and _initialize need to introduce another weight matrix
+    # - get dim is now nice
+    # - apply only needs to add the context
+    pass
+
+
+
 def train_rnn():
 
     # coco_hd5_path = "/media/data/image_classification/coco.hdf5"
