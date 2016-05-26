@@ -163,7 +163,7 @@ def train_rnn():
                       feedback_brick=feedback,
                       name='readout')
 
-    transition = ContextRecurrent(name="transition",
+    transition = ContextSimpleRecurrent(name="transition",
                                   dim=hidden_size,
                                   activation=Tanh())
 
