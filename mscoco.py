@@ -72,20 +72,10 @@ class ContextSimpleRecurrent(SimpleRecurrent):
     @recurrent(sequences=['inputs', 'mask'], states=['states'],
                outputs=['states'], contexts=['context'])
     def apply(self, inputs, states, mask=None, context=None):
-        """Apply the simple transition.
+        """Same as SimpleRecurrent.apply except with an additional argument:
 
-        Parameters
-        ----------
-        inputs : :class:`~tensor.TensorVariable`
-            The 2D inputs, in the shape (batch, features).
-        states : :class:`~tensor.TensorVariable`
-            The 2D states, in the shape (batch, features).
-        mask : :class:`~tensor.TensorVariable`
-            A 1D binary array in the shape (batch,) which is 1 if
-            there is data available, 0 if not. Assumed to be 1-s
-            only if not given.
         context : :class:`~tensor.TensorVariable`
-            Not actually used here, but needed in readout
+            Not actually used here, but needed for readout to take it into account
         """
         next_states = inputs + tensor.dot(states, self.W)
         next_states = self.children[0].apply(next_states)
