@@ -158,7 +158,7 @@ def train_rnn():
     readout = Readout(readout_dim=vocab_size,
                       # source_names=["states", "context"],
                       source_names=["states"],
-                      merge=merger,
+                      # merge=merger,
                       emitter=emitter,
                       feedback_brick=feedback,
                       name='readout')
@@ -188,7 +188,7 @@ def train_rnn():
     #                                data_stream=stream,
     #                                prefix="mscoco")
     gradient = aggregation.mean(optimizer.total_gradient_norm)
-    gradient_monitoring = DataStreamMonitoring([gradient, cost], every_n_batches=500)
+    gradient_monitoring = TrainingDataMonitoring([gradient, cost], every_n_batches=500)
 
     # Main Loop
     save_path = 'mscoco-rnn-{}-2.tar'.format(hidden_size)
@@ -196,8 +196,8 @@ def train_rnn():
     main_loop = MainLoop(model=Model(cost),
                          data_stream=stream,
                          algorithm=optimizer,
-                         extensions=[gradient_monitoring,
-                                     FinishAfter(after_n_epochs=1),
+                         extensions=[FinishAfter(after_n_epochs=1),
+                                     gradient_monitoring,
                                      Timing(on_interrupt=True),
                                      Printing(on_interrupt=True),
                                      Checkpoint(save_path,
