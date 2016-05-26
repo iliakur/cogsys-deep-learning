@@ -15,7 +15,7 @@ def imagenet_model_func(matlab_filepath):
     input_var = tensor.tensor4("input")
     output_1k = Sequence([br.apply for br in vgg_vd_model.layers]).apply(input_var)
     operable_model = Model(output_1k)
-    return operable_model.get_theano_function()
+    return operable_model.get_theano_function(allow_input_downcast=True)
     # return theano.function([input_var], output_1k)
     # return vgg_vd_model
 
@@ -175,7 +175,7 @@ def train_rnn():
 
 if __name__ == '__main__':
     matlab_filepath = "/projects/korpora/mscoco/coco/imagenet-vgg-verydeep-16.mat"
-    cnn_func = imagenet_model_func(matlab_filepath, allow_input_downcast=True)
+    cnn_func = imagenet_model_func(matlab_filepath)
 
     cocotalk_h5_path = "/projects/korpora/mscoco/coco/cocotalk.h5"
     cocotalk_h5 = h5py.File(cocotalk_h5_path)
