@@ -139,8 +139,8 @@ def train_rnn():
 
     # coco_hd5_path = "/media/data/image_classification/coco.hdf5"
     coco_hd5_path = "/projects/korpora/mscoco/coco.hdf5"
-    coco_dataset = CocoHD5Dataset(coco_hd5_path, range(20))
-    stream = mscoco_stream(coco_dataset, 5)
+    coco_dataset = CocoHD5Dataset(coco_hd5_path)
+    stream = mscoco_stream(coco_dataset, 15)
 
     # coco_hd5_path = "/media/data/image_classification/cocotalk.json"
     coco_json_path = '/projects/korpora/mscoco/coco/cocotalk.json'
@@ -187,18 +187,18 @@ def train_rnn():
     # monitor = DataStreamMonitoring(variables=[cost],
     #                                data_stream=stream,
     #                                prefix="mscoco")
-    monitor_freq = 5
+    monitor_freq = 10000
     gradient = aggregation.mean(optimizer.total_gradient_norm)
     gradient_monitoring = TrainingDataMonitoring([gradient, cost],
                                                  every_n_batches=monitor_freq)
 
     # Main Loop
-    save_path = 'mscoco-rnn-{}-2.tar'.format(hidden_size)
+    save_path = 'mscoco-rnn-{}-context.tar'.format(hidden_size)
     # save_path = "test-context.tar"
     main_loop = MainLoop(model=Model(cost),
                          data_stream=stream,
                          algorithm=optimizer,
-                         extensions=[FinishAfter(after_n_epochs=2),
+                         extensions=[FinishAfter(after_n_epochs=5),
                                      gradient_monitoring,
                                      Timing(after_epoch=True),
                                      Printing(on_interrupt=True,
