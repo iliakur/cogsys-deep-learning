@@ -213,11 +213,20 @@ def train_rnn():
 
 
 if __name__ == '__main__':
-    matlab_filepath = "/projects/korpora/mscoco/coco/imagenet-vgg-verydeep-16.mat"
-    cnn_func = imagenet_model_func(matlab_filepath)
 
-    cocotalk_h5_path = "/projects/korpora/mscoco/coco/cocotalk.h5"
-    cocotalk_h5 = h5py.File(cocotalk_h5_path)
-    test_images = cocotalk_h5['images'][:2]
+    # This works!
+    # matlab_filepath = "/projects/korpora/mscoco/coco/imagenet-vgg-verydeep-16.mat"
+    # cnn_func = imagenet_model_func(matlab_filepath)
+    # cocotalk_h5_path = "/projects/korpora/mscoco/coco/cocotalk.h5"
+    # cocotalk_h5 = h5py.File(cocotalk_h5_path)
+    # test_images = cocotalk_h5['images'][:2]
 
-    print(cnn_func(test_images))
+    rnn_tar_file = 'mscoco-rnn-512-2.tar'
+    rnn_tar_path = "~/trained_models/" + rnn_tar_file
+    trained_main_loop = load_tar(rnn_tar_path)
+    # is this correct?
+    generator = trained_main_loop.model.get_top_bricks()[0]
+    generating = generator.generate(n_steps=5, batch_size=1, iterate=True)
+    sampler = ComputationGraph(generating).get_theano_function()
+    print(sampler.inputs)
+    # print(cnn_func(test_images))
