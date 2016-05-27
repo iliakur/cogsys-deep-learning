@@ -108,7 +108,7 @@ class ContextRecurrent(SimpleRecurrent):
 
     def _initialize(self):
         self.weights_init.initialize(self.R, self.rng)
-        super(ContextRecurrent, self)._allocate()
+        super(ContextRecurrent, self)._initialize()
 
     @property
     def R(self):
