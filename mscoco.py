@@ -222,7 +222,7 @@ if __name__ == '__main__':
     # test_images = cocotalk_h5['images'][:2]
 
     rnn_tar_file = 'mscoco-rnn-512-2.tar'
-    rnn_tar_path = "~/models/" + rnn_tar_file
+    rnn_tar_path = "/home/kurenkov/models/" + rnn_tar_file
     trained_main_loop = load_tar(rnn_tar_path)
     # is this correct?
     generator = trained_main_loop.model.get_top_bricks()[0]
