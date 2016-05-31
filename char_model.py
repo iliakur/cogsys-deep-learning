@@ -124,8 +124,10 @@ def train_model(hidden_size, batch_size):
     main_loop.run()
 
 
-for h_size, b_size in ((200, 150), (300, 150), (400, 50), (500, 50)):
-    logger.info("#" * 79)
-    logger.info("Training with hidden size set to {} and batches of {} examples".format(h_size, b_size))
-    logger.info("#" * 79)
-    train_model(h_size, b_size)
+if __name__ == '__main__':
+    for h_size, b_size in ((200, 150), (300, 150), (400, 50), (500, 50)):
+        logger.info("#" * 79)
+        logger.info(
+            "Training with hidden size set to {} and batches of {} examples".format(h_size, b_size))
+        logger.info("#" * 79)
+        train_model(h_size, b_size)
