@@ -7,7 +7,9 @@ from workspace import *
 from utils import fav_extensions, default_batch_stream
 
 # data-related stuff
-DATA_ROOT = "/media/data/babi-tasks-local"
+# Toggle these lines when switching between local runs and on medusa
+# DATA_ROOT = "/media/data/babi-tasks-local"
+DATA_ROOT = "/home/kurenkov/data"
 
 
 def babi_vocab(f_path="babi-task2-300stories.vocab.json"):
@@ -73,12 +75,14 @@ def flat_softmax(prob_tensor):
     return tensor.nnet.softmax(prob_tensor).flatten()
 
 
-def n2n_memory_layer(x_indeces, q_indeces):
+# Embedding weights for one layer
+# TODO: make them play nicely with scan
+A = shared_random('A')
+B = shared_random('B')
+C = shared_random('C')
 
-    # Embedding weights
-    A = shared_random('A')
-    B = shared_random('B')
-    C = shared_random('C')
+
+def n2n_memory_layer(x_indeces, q_indeces):
 
     # Inputs prepared for embedding
     x_set = theano.map(one_hot_sum, sequences=[x_indeces])[0]
@@ -92,19 +96,19 @@ def n2n_memory_layer(x_indeces, q_indeces):
     # Memory weights
     p = flat_softmax(mapped_dot(m_set, u)[0])
 
-    # Output
+    # Output ("o" in the paper)
     o = p.dot(c_set)
-    return (o, [A, B, C])
+
+    return o + u
 
 
-def train_n2n(data_path=DATA_ROOT):
+def train_n2n():
     x_batch = tensor.ltensor3('stories')
     q_batch = tensor.lmatrix('questions')
-    o_batch, params = theano.map(n2n_memory_layer, sequences=[x_batch, q_batch])[0]
+    o_batch = theano.map(n2n_memory_layer, sequences=[x_batch, q_batch])[0]
 
     # Answer
     W = shared_random('W', shape=(EMBED_DIM, VOCAB_SIZE))
-    params.append(W)
     a_hat = tensor.nnet.softmax(mapped_dot(o_batch, W)[0])
 
     # Improving answer estimate
@@ -115,7 +119,7 @@ def train_n2n(data_path=DATA_ROOT):
     # - implement gradient clipping
     # - the step rule they had
     # gradient_clipper = algorithms.StepClipping
-    optimizer = GradientDescent(cost=batch_cost, parameters=params)
+    optimizer = GradientDescent(cost=batch_cost, parameters=[A, B, C, D])
     gradient_norm = aggregation.mean(optimizer.total_gradient_norm)
 
     # Feed actual data
