@@ -38,6 +38,7 @@ from blocks.bricks.sequence_generators import (SequenceGenerator,
 from blocks.graph import ComputationGraph
 from blocks.initialization import IsotropicGaussian, Constant
 from blocks.algorithms import GradientDescent, Scale, Adam
+from blocks import algorithms
 
 # Fuel Imports
 from fuel.datasets import IndexableDataset, Dataset
