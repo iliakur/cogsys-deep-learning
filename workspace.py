@@ -59,7 +59,3 @@ from blocks.monitoring import aggregation
 from blocks.serialization import dump, load
 
 stream_log_handler = logging.StreamHandler()
-
-
-def load_tar(file_path):
-    return load(open(file_path, 'rb'))
