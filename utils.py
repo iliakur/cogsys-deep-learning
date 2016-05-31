@@ -11,13 +11,12 @@ def default_batch_stream(dataset, batch_size):
     return DataStream.default_stream(dataset, iteration_scheme=batch_scheme)
 
 
-def fav_extensions(n_epochs, monitor_freq):
+def fav_extensions(n_epochs, variables_of_interest, save_path, monitor_freq=1000):
     # add monitoring freq
-    return [FinishAfter(after_n_epochs=5),
-            gradient_monitoring,
+    return [FinishAfter(after_n_epochs=n_epochs),
+            TrainingDataMonitoring(variables_of_interest, every_n_batches=monitor_freq),
             Timing(after_epoch=True),
-            Printing(on_interrupt=True,
-                     every_n_batches=monitor_freq),
+            Printing(on_interrupt=True, every_n_batches=monitor_freq),
             Checkpoint(save_path)
             # Plot("Example Plot", channels=[['test_cost_simple_xentropy', "test_error_rate"]])
             ]
