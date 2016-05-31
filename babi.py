@@ -22,12 +22,7 @@ class BaBiDataset(Dataset):
 
     def __init__(self, hd5_path, subset=None):
         self.f = h5py.File(hd5_path)
-        # with h5py.File(hd5_path) as hd5_file:
-            # this stuff is small so no problem reading it into memory
         self._sources = tuple(self.f.keys())
-            # for source_name in hd5_file:
-            #     self.datasets[source_name] = hd5_file[source_name]
-
         self.axis_labels = None
 
     @property
