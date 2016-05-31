@@ -1,4 +1,4 @@
-from mscoco import train_rnn
+from babi import train_n2n
 
 if __name__ == '__main__':
-    train_rnn()
+    train_n2n("/home/kurenkov/data")
