@@ -114,14 +114,16 @@ def train_n2n():
     # - implement gradient clipping
     # - the step rule they had
     # gradient_clipper = algorithms.StepClipping
-    optimizer = GradientDescent(cost=batch_cost, parameters=[A, B, C, D])
+    optimizer = GradientDescent(cost=batch_cost, parameters=[A, B, C, W])
     gradient_norm = aggregation.mean(optimizer.total_gradient_norm)
 
     # Feed actual data
     babi_ds = BaBiDataset(os.path.join(DATA_ROOT, "babi-task2-300stories.h5"))
     babi_stream = default_batch_stream(babi_ds, 32)
 
-    loop_extensions = fav_extensions(1, [batch_cost, gradient_norm], "babi-task2.tar")
+    # train for 20 epochs, monitor cost and gradient norm, write to file
+    loop_extensions = fav_extensions(20, [batch_cost, gradient_norm],
+                                     "babi-task2.tar", monitor_freq=32)
     main_loop = MainLoop(algorithm=optimizer,
                          extensions=loop_extensions,
                          data_stream=babi_stream)
