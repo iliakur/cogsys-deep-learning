@@ -23,4 +23,4 @@ def fav_extensions(n_epochs, variables_of_interest, save_path, monitor_freq=1000
 
 
 def load_tar(file_path):
-    return load(open(file_path, 'rb'))
+    return blocksIO.load(open(file_path, 'rb'))

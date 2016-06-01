@@ -57,6 +57,6 @@ from blocks_extras.extensions.plot import Plot
 from blocks.monitoring import aggregation
 
 # (De)serialization
-from blocks.serialization import dump, load
+from blocks import serialization as blocksIO
 
 stream_log_handler = logging.StreamHandler()
