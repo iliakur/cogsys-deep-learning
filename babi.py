@@ -109,6 +109,7 @@ def train_n2n():
     # Improving answer estimate
     a = tensor.lvector('answers')
     batch_cost = tensor.nnet.categorical_crossentropy(a_hat, a).mean()
+    batch_cost.name = "cc-entropy average"
 
     # TODO:
     # - implement gradient clipping
