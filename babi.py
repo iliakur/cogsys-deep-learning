@@ -114,7 +114,9 @@ def train_n2n():
     # - implement gradient clipping
     # - the step rule they had
     # gradient_clipper = algorithms.StepClipping
-    optimizer = GradientDescent(cost=batch_cost, parameters=[A, B, C, W])
+    optimizer = GradientDescent(cost=batch_cost,
+                                parameters=[A, B, C, W],
+                                step_rule=Scale(learning_rate=0.01))
     gradient_norm = aggregation.mean(optimizer.total_gradient_norm)
 
     # Feed actual data
