@@ -1,4 +1,4 @@
-from babi import train_n2n
+from babi import main
 
 if __name__ == '__main__':
-    train_n2n()
+    main("train")

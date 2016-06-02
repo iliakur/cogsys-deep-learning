@@ -39,10 +39,9 @@ class BaBiDataset(Dataset):
 # Defining the Model
 # ##################
 
-vocab = babi_vocab()
-
 # Vocab size needs to leave space for zero which doesn't correspond to any entry
-VOCAB_SIZE = len(vocab) + 1
+# We know empirically that it's 19
+VOCAB_SIZE = 19
 # Following the paper again, see section 4.4
 EMBED_DIM = 20
 RNG = np.random.RandomState(1984)
@@ -56,37 +55,46 @@ def shared_random(name, shape=(VOCAB_SIZE, EMBED_DIM)):
     return theano.shared(randomness, name=name)
 
 
+def fake3d_shared_random(name, shape=None):
+    if not shape:
+        shape = (1, VOCAB_SIZE, EMBED_DIM)
+    return shared_random(name, shape=shape)
+
+
+def one_hot_sequence(indices_tensor_sequence):
+    # unfortunately theano currently only supports vectors as input, so we have
+    # to use scan for this.
+    # the result is a 3D tensor
+    return theano.map(tensor.extra_ops.to_one_hot,
+                      sequences=[indices_tensor_sequence],
+                      non_sequences=[VOCAB_SIZE])[0]
+
+
+def one_hot_items(indeces_2d):
+    one_hot_items_3d = one_hot_sequence(indeces_2d)
+    # each item is an array of word 1-hot vectors
+    # we sum over the second dimension to get a sentences by embedding matrix
+    return one_hot_items_3d.sum(axis=1)
+
+
 def mapped_dot(vectors, item):
     return theano.map(tensor.dot, sequences=[vectors], non_sequences=[item])
 
 
-def one_hot_sum(indices_tensor):
-    one_hot = tensor.extra_ops.to_one_hot(indices_tensor, VOCAB_SIZE)
-    # sum along first axis
-    return one_hot.sum(axis=0)
+def repeat_batched_dot(vectors, item):
+    repeated = item.repeat(vectors.shape[0], axis=0)
+    return tensor.batched_dot(vectors, repeated)
 
 
 def flat_softmax(prob_tensor):
     return tensor.nnet.softmax(prob_tensor).flatten()
 
 
-# Embedding weights for one layer
-# TODO: make them play nicely with scan
-A = shared_random('A')
-B = shared_random('B')
-C = shared_random('C')
-
-
-def n2n_memory_layer(x_indeces, q_indeces):
-
-    # Inputs prepared for embedding
-    x_set = theano.map(one_hot_sum, sequences=[x_indeces])[0]
-    q = one_hot_sum(q_indeces)
+def n2n_memory_layer(x_set, u, A, C):
 
     # Embeddings
     m_set = mapped_dot(x_set, A)[0]
     c_set = mapped_dot(x_set, C)[0]
-    u = q.dot(B)
 
     # Memory weights
     p = flat_softmax(mapped_dot(m_set, u)[0])
@@ -97,40 +105,81 @@ def n2n_memory_layer(x_indeces, q_indeces):
     return o + u
 
 
-def train_n2n():
-    x_batch = tensor.ltensor3('stories')
-    q_batch = tensor.lmatrix('questions')
-    o_batch = theano.map(n2n_memory_layer, sequences=[x_batch, q_batch])[0]
+def n2n_network(x_bch, q_bch, A, B, C, W):
+    # raw input batches coming in
+    # x_bch = tensor.ltensor3('stories')
+    # q_bch = tensor.lmatrix('questions')
+
+    # Inputs converted to one-hot representations
+    x_one_hot_bch = theano.map(one_hot_items, sequences=[x_bch])[0]
+    q_one_hot_bch = one_hot_items(q_bch)
+
+    u_bch = repeat_batched_dot(q_one_hot_bch, B)
+
+    o_bch = theano.map(n2n_memory_layer,
+                       sequences=[x_one_hot_bch, u_bch],
+                       non_sequences=[A, C])[0]
 
     # Answer
-    W = shared_random('W', shape=(EMBED_DIM, VOCAB_SIZE))
-    a_hat = tensor.nnet.softmax(mapped_dot(o_batch, W)[0])
+    a_hat = tensor.nnet.softmax(repeat_batched_dot(o_bch, W))
 
-    # Improving answer estimate
+    return a_hat
+
+
+def main(mode):
+
+    # raw input batches coming in
+    x = tensor.ltensor3('stories')
+    q = tensor.lmatrix('questions')
     a = tensor.lvector('answers')
-    batch_cost = tensor.nnet.categorical_crossentropy(a_hat, a).mean()
-    batch_cost.name = "cc-entropy average"
 
-    # TODO:
-    # - implement gradient clipping
-    # - the step rule they had
-    # gradient_clipper = algorithms.StepClipping
-    optimizer = GradientDescent(cost=batch_cost,
-                                parameters=[A, B, C, W],
-                                step_rule=Scale(learning_rate=0.01))
-    gradient_norm = aggregation.mean(optimizer.total_gradient_norm)
+    if mode == "train":
 
-    # Feed actual data
-    babi_ds = BaBiDataset(os.path.join(DATA_ROOT, "babi-task2-300stories.h5"))
-    babi_stream = default_batch_stream(babi_ds, 32)
+        # Embedding weights for one layer
+        A = shared_random('A')
+        B = fake3d_shared_random('B')
+        C = shared_random('C')
+        W = fake3d_shared_random('W', shape=(1, EMBED_DIM, VOCAB_SIZE))
 
-    # train for 20 epochs, monitor cost and gradient norm, write to file
-    loop_extensions = fav_extensions(20, [batch_cost, gradient_norm],
-                                     "babi-task2.tar", monitor_freq=32)
-    main_loop = MainLoop(algorithm=optimizer,
-                         extensions=loop_extensions,
-                         data_stream=babi_stream)
-    main_loop.run()
+        # getting an estimate
+        a_hat = n2n_network(x, q, A, B, C, W)
+
+        # Improving answer estimate
+        batch_cost = tensor.nnet.categorical_crossentropy(a_hat, a).mean()
+        batch_cost.name = "cc-entropy average"
+
+        # TODO:
+        # - implement gradient clipping
+        # - the step rule they had
+        # gradient_clipper = algorithms.StepClipping
+        optimizer = GradientDescent(cost=batch_cost,
+                                    parameters=[A, B, C, W],
+                                    step_rule=Scale(learning_rate=0.01))
+        gradient_norm = aggregation.mean(optimizer.total_gradient_norm)
+
+        # Feed actual data
+        babi_ds = BaBiDataset(os.path.join(DATA_ROOT, "babi-task2-300stories.h5"))
+        babi_stream = default_batch_stream(babi_ds, 32)
+
+        # train for 20 epochs, monitor cost and gradient norm, write to file
+        loop_extensions = fav_extensions(20, [batch_cost, gradient_norm],
+                                         "babi-task2.tar", monitor_freq=32)
+        main_loop = MainLoop(algorithm=optimizer,
+                             extensions=loop_extensions,
+                             data_stream=babi_stream)
+        main_loop.run()
+
+    elif mode == 'test':
+        # to-do: load paramdict
+        param_dict = {}
+        # Embedding weights for one layer
+        A = param_dict('/A')
+        B = param_dict('/B')
+        C = param_dict('/C')
+        W = param_dict('/W')
+
+    # # Return answer index
+    # return a_hat_bch.argmax()
 
 if __name__ == '__main__':
-    train_n2n()
+    main("test")
