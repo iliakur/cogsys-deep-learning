@@ -1,5 +1,6 @@
 import os
 import json
+import time
 
 import h5py
 
@@ -44,7 +45,7 @@ class BaBiDataset(Dataset):
 VOCAB_SIZE = 19
 # Following the paper again, see section 4.4
 EMBED_DIM = 20
-RNG = np.random.RandomState(1984)
+RNG = np.random.RandomState(int(time.time()))
 
 
 def shared_random(name, shape=(VOCAB_SIZE, EMBED_DIM)):
