@@ -94,11 +94,11 @@ def flat_softmax(prob_tensor):
 def n2n_memory_layer(x_set, u, A, C):
 
     # Embeddings
-    m_set = repeat_batched_dot(x_set, A)
-    c_set = repeat_batched_dot(x_set, C)
+    m_set = mapped_dot(x_set, A)[0]
+    c_set = mapped_dot(x_set, C)[0]
 
     # Memory weights
-    p = flat_softmax(repeat_batched_dot(m_set, u))
+    p = flat_softmax(mapped_dot(m_set, u)[0])
 
     # Output ("o" in the paper)
     o = p.dot(c_set)
@@ -137,9 +137,9 @@ def main(mode):
     if mode == "train":
 
         # Embedding weights for one layer
-        A = fake3d_shared_random('A')
+        A = shared_random('A')
         B = fake3d_shared_random('B')
-        C = fake3d_shared_random('C')
+        C = shared_random('C')
         W = fake3d_shared_random('W', shape=(1, EMBED_DIM, VOCAB_SIZE))
 
         # getting an estimate
