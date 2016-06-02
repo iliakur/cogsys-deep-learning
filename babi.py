@@ -171,14 +171,26 @@ def main(mode):
 
     elif mode == 'test':
         # to-do: load paramdict
-        param_dict = {}
+        model_path = ''
+        param_dict = blocksIO.load_parameters(model_path)
+
         # Embedding weights for one layer
         A = param_dict('/A')
         B = param_dict('/B')
         C = param_dict('/C')
         W = param_dict('/W')
 
-    # # Return answer index
+        a_hat = n2n_network(x, q, A, B, C, W)
+
+        qa_solver = theano.function([x, q], outputs=a_hat)
+
+        with h5py.File(test_data_path) as test_data_h5:
+            stories = test_data_h5['stories']
+            questions = test_data_h5['questions']
+            answer_prob_dists = qa_solver(stories, questions)
+            np.save('test_data_answers', answer_prob_dists)
+
+    # Return answer index
     # return a_hat_bch.argmax()
 
 if __name__ == '__main__':
