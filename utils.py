@@ -16,7 +16,7 @@ def fav_extensions(n_epochs, variables_of_interest, save_path, monitor_freq=1000
     return [FinishAfter(after_n_epochs=n_epochs),
             TrainingDataMonitoring(variables_of_interest, every_n_batches=monitor_freq),
             Timing(after_epoch=True),
-            Printing(on_interrupt=True, every_n_batches=monitor_freq),
+            Printing(every_n_batches=monitor_freq),
             Checkpoint(save_path)
             # Plot("Example Plot", channels=[['test_cost_simple_xentropy', "test_error_rate"]])
             ]

@@ -152,7 +152,6 @@ def main(mode):
         # TODO:
         # - implement gradient clipping
         # - the step rule they had
-        # gradient_clipper = algorithms.StepClipping
         optimizer = GradientDescent(cost=batch_cost,
                                     parameters=[A, B, C, W],
                                     step_rule=Scale(learning_rate=0.01))
@@ -162,9 +161,9 @@ def main(mode):
         babi_ds = BaBiDataset(os.path.join(DATA_ROOT, "babi-task2-300stories.h5"))
         babi_stream = default_batch_stream(babi_ds, 32)
 
-        # train for 20 epochs, monitor cost and gradient norm, write to file
-        loop_extensions = fav_extensions(20, [batch_cost, gradient_norm],
-                                         "babi-task2.tar", monitor_freq=32)
+        # train for 60 epochs, monitor cost and gradient norm, write to file
+        loop_extensions = fav_extensions(60, [batch_cost, gradient_norm],
+                                         "babi-task2-60-epochs.tar", monitor_freq=50)
         main_loop = MainLoop(algorithm=optimizer,
                              extensions=loop_extensions,
                              data_stream=babi_stream)
