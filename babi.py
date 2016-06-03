@@ -107,9 +107,6 @@ def n2n_memory_layer(x_set, u, A, C):
 
 
 def n2n_network(x_bch, q_bch, A, B, C, W):
-    # raw input batches coming in
-    # x_bch = tensor.ltensor3('stories')
-    # q_bch = tensor.lmatrix('questions')
 
     # Inputs converted to one-hot representations
     x_one_hot_bch = theano.map(one_hot_items, sequences=[x_bch])[0]
