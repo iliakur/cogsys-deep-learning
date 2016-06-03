@@ -14,7 +14,10 @@ def default_batch_stream(dataset, batch_size):
 def fav_extensions(n_epochs, variables_of_interest, save_path, monitor_freq=1000):
     # add monitoring freq
     return [FinishAfter(after_n_epochs=n_epochs),
-            TrainingDataMonitoring(variables_of_interest, every_n_batches=monitor_freq),
+            TrainingDataMonitoring(variables_of_interest,
+                                   every_n_batches=monitor_freq,
+                                   after_epoch=True,
+                                   after_training=True),
             Timing(after_epoch=True),
             Printing(every_n_batches=monitor_freq),
             Checkpoint(save_path)
