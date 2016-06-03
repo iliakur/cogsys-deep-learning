@@ -168,12 +168,10 @@ def main(mode):
             LayerParams(2),
             LayerParams(3)
         ]
-        # A = shared_random('A')
-        # C = shared_random('C')
-        # getting an estimate
+        # getting a network estimate
         a_hat = n2n_network(x, q, layers, B, W)
 
-        # Improving answer estimate
+        # Improving network estimate
         batch_cost = tensor.nnet.categorical_crossentropy(a_hat, a).mean()
         batch_cost.name = "cc-entropy average"
 
@@ -197,8 +195,10 @@ def main(mode):
         babi_stream = default_batch_stream(babi_ds, 32)
 
         # train for 60 epochs, monitor cost and gradient norm, write to file
-        loop_extensions = fav_extensions(60, [batch_cost, gradient_norm],
-                                         "babi-task2-60-epochs-3-layers.tar", monitor_freq=50)
+        loop_extensions = fav_extensions(60,
+                                         "babi-task2-60-epochs-3-layers.tar",
+                                         [batch_cost, gradient_norm],
+                                         every_n_batches=50)
         main_loop = MainLoop(algorithm=optimizer,
                              extensions=loop_extensions,
                              data_stream=babi_stream)
@@ -245,7 +245,7 @@ def main(mode):
             network_answers = answer_prob_dists.argmax(axis=1)
             # mean of bool vector is its sum / its len
             percent_correct = (correct_answers == network_answers).mean()
-            print("Percent correct on train data: {}%".format(percent_correct))
+            print("Percent correct on train data: {}%".format(percent_correct * 100))
 
 if __name__ == '__main__':
     main("test")
