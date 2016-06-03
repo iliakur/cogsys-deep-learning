@@ -160,11 +160,11 @@ def main(mode):
 
         # Feed actual data
         babi_ds = BaBiDataset(os.path.join(DATA_ROOT, "babi-task2-300stories.h5"))
-        babi_stream = default_batch_stream(babi_ds, 32)
+        babi_stream = default_batch_stream(babi_ds, babi_ds.num_examples)
 
         # train for 60 epochs, monitor cost and gradient norm, write to file
         loop_extensions = fav_extensions(60, [batch_cost, gradient_norm],
-                                         "babi-task2-60-epochs.tar", monitor_freq=50)
+                                         "babi-task2-60-epochs-huge-batch.tar", monitor_freq=50)
         main_loop = MainLoop(algorithm=optimizer,
                              extensions=loop_extensions,
                              data_stream=babi_stream)
