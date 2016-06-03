@@ -12,7 +12,9 @@ QLEN = 3
 SLEN = 3
 # I had to find this out by looping over the first 1K questions and getting
 # the maximum length of a story
-MAX_STORY_LEN = 61
+# for training was 61
+# for testing was 68
+MAX_STORY_LEN = 68
 
 
 def is_question(line):
@@ -26,9 +28,10 @@ def is_first_statement(token_list):
 question_counter = 0
 requested_questions = 1000
 root_dir = "/media/data/babi-tasks-local"
-f_path = os.path.join(root_dir, "babi-task2-300stories.txt")
-vocab_json_path = os.path.join(root_dir, "babi-task2-300stories.vocab.json")
-h5path = "/media/data/babi-tasks-local/babi-task2-300stories.h5"
+fname_tpl = "babi-task2-200stories-test.{}"
+f_path = os.path.join(root_dir, fname_tpl.format("txt"))
+vocab_json_path = os.path.join(root_dir, fname_tpl.format("vocab.json"))
+h5path = os.path.join(root_dir, fname_tpl.format("h5"))
 
 # Vocabulary creation
 vocab_set = set()
