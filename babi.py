@@ -150,6 +150,8 @@ def n2n_network(x_bch, q_bch, layers, B, W):
 
 
 def main(mode):
+    model_fname = "babi-task2-60-epochs-3-layers-rnn.tar"
+    model_save_path = os.path.join(MODEL_ROOT, model_fname)
 
     # raw input batches coming in
     x = tensor.ltensor3('stories')
@@ -163,10 +165,11 @@ def main(mode):
         W = fake3d_shared_random('W', shape=(1, EMBED_DIM, VOCAB_SIZE))
 
         # per layer embedding weights
+        shared_layer = LayerParams("")
         layers = [
-            LayerParams(1),
-            LayerParams(2),
-            LayerParams(3)
+            shared_layer,
+            shared_layer,
+            shared_layer
         ]
         # getting a network estimate
         a_hat = n2n_network(x, q, layers, B, W)
@@ -178,10 +181,11 @@ def main(mode):
         # TODO:
         # - implement gradient clipping
         # - the step rule they had
-        relevant_params = [B, W]
-        for layer in layers:
-            relevant_params.append(layer.A)
-            relevant_params.append(layer.C)
+        relevant_params = [B, W, shared_layer.A, shared_layer.C]
+        # In case no weights are shared
+        # for layer in layers:
+        #     relevant_params.append(layer.A)
+        #     relevant_params.append(layer.C)
 
         optimizer = GradientDescent(cost=batch_cost,
                                     parameters=relevant_params,
@@ -196,7 +200,7 @@ def main(mode):
 
         # train for 60 epochs, monitor cost and gradient norm, write to file
         loop_extensions = fav_extensions(60,
-                                         "babi-task2-60-epochs-3-layers.tar",
+                                         model_save_path,
                                          [batch_cost, gradient_norm],
                                          every_n_batches=50)
         main_loop = MainLoop(algorithm=optimizer,
@@ -206,23 +210,31 @@ def main(mode):
 
     elif mode == 'test':
         # to-do: load paramdict
-        model_fname = "babi-task2-60-epochs-3-layers.tar"
-        param_dict = blocksIO.load_parameter_values(os.path.join(MODEL_ROOT, model_fname))
+        # model_fname = "babi-task2-60-epochs-3-layers-rnn.tar"
+        param_dict = blocksIO.load_parameter_values(model_save_path)
 
         # Embedding weights for one layer
         B = theano.shared(param_dict['/B'], "B")
         W = theano.shared(param_dict['/W'], "W")
 
+        shared_layer = LayerParams("",
+                                   A=theano.shared(param_dict['/A']),
+                                   C=theano.shared(param_dict['/C']))
+        # layers = [
+        #     LayerParams(1,
+        #                 A=theano.shared(param_dict['/A1']),
+        #                 C=theano.shared(param_dict['/C1'])),
+        #     LayerParams(2,
+        #                 A=theano.shared(param_dict['/A2']),
+        #                 C=theano.shared(param_dict['/C2'])),
+        #     LayerParams(3,
+        #                 A=theano.shared(param_dict['/A3']),
+        #                 C=theano.shared(param_dict['/C3'])),
+        # ]
         layers = [
-            LayerParams(1,
-                        A=theano.shared(param_dict['/A1']),
-                        C=theano.shared(param_dict['/C1'])),
-            LayerParams(2,
-                        A=theano.shared(param_dict['/A2']),
-                        C=theano.shared(param_dict['/C2'])),
-            LayerParams(3,
-                        A=theano.shared(param_dict['/A3']),
-                        C=theano.shared(param_dict['/C3'])),
+            shared_layer,
+            shared_layer,
+            shared_layer,
         ]
 
         a_hat = n2n_network(x, q, layers, B, W)
