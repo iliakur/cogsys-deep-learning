@@ -185,7 +185,9 @@ def main(mode):
 
         qa_solver = theano.function([x, q], outputs=a_hat)
 
-        test_data_path = os.path.join(DATA_ROOT, "babi-task2-200stories-test.h5")
+        # test_fname = "babi-task2-200stories-test.h5"
+        test_fname = "babi-task2-300stories.h5"
+        test_data_path = os.path.join(DATA_ROOT, test_fname)
         with h5py.File(test_data_path) as test_data_h5:
             stories = test_data_h5['stories']
             questions = test_data_h5['questions']
