@@ -7,11 +7,15 @@ import h5py
 from workspace import *
 from utils import fav_extensions, default_batch_stream
 
+# ##################
 # data-related stuff
+# ##################
+
 # Toggle these lines when switching between local runs and on medusa
 # DATA_ROOT = "/media/data/babi-tasks-local"
 DATA_ROOT = "/home/kurenkov/data"
-
+# Same, but for loading model parameters
+MODEL_ROOT = "/home/kurenkov/models"
 
 def babi_vocab(f_path="babi-task2-300stories.vocab.json"):
     with open(os.path.join(DATA_ROOT, f_path)) as vocab_file:
@@ -168,8 +172,8 @@ def main(mode):
 
     elif mode == 'test':
         # to-do: load paramdict
-        model_path = ''
-        param_dict = blocksIO.load_parameters(model_path)
+        model_fname = "babi-task2-60-epochs.tar"
+        param_dict = blocksIO.load_parameters(os.path.join(MODEL_ROOT, model_fname))
 
         # Embedding weights for one layer
         A = param_dict('/A')
@@ -181,6 +185,7 @@ def main(mode):
 
         qa_solver = theano.function([x, q], outputs=a_hat)
 
+        test_data_path = os.path.join(DATA_ROOT, "babi-task2-200stories-test.h5")
         with h5py.File(test_data_path) as test_data_h5:
             stories = test_data_h5['stories']
             questions = test_data_h5['questions']
