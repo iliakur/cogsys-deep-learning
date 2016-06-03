@@ -176,10 +176,10 @@ def main(mode):
         param_dict = blocksIO.load_parameter_values(os.path.join(MODEL_ROOT, model_fname))
 
         # Embedding weights for one layer
-        A = param_dict['/A']
-        B = param_dict['/B']
-        C = param_dict['/C']
-        W = param_dict['/W']
+        A = theano.shared(param_dict['/A'], "A")
+        B = theano.shared(param_dict['/B'], "B")
+        C = theano.shared(param_dict['/C'], "C")
+        W = theano.shared(param_dict['/W'], "W")
 
         a_hat = n2n_network(x, q, A, B, C, W)
 
