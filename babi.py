@@ -17,6 +17,7 @@ DATA_ROOT = "/home/kurenkov/data"
 # Same, but for loading model parameters
 MODEL_ROOT = "/home/kurenkov/models"
 
+
 def babi_vocab(f_path="babi-task2-300stories.vocab.json"):
     with open(os.path.join(DATA_ROOT, f_path)) as vocab_file:
         return json.load(vocab_file)
@@ -95,6 +96,23 @@ def flat_softmax(prob_tensor):
     return tensor.nnet.softmax(prob_tensor).flatten()
 
 
+class LayerParams(object):
+    """class to wrap around layer parameters"""
+
+    def __init__(self, level, A=None, C=None):
+        self.level = level
+        self.set_param("A", A)
+        self.set_param("C", C)
+
+    def set_param(name, value):
+        shared_var_name = name + str(self.level)
+        if value is None:
+            setattr(self, name, shared_random(shared_var_name))
+        else:
+            setattr(self, name, value)
+            getattr(self, name).name = shared_var_name
+
+
 def n2n_memory_layer(x_set, u, A, C):
 
     # Embeddings
@@ -110,7 +128,7 @@ def n2n_memory_layer(x_set, u, A, C):
     return o + u
 
 
-def n2n_network(x_bch, q_bch, A, B, C, W):
+def n2n_network(x_bch, q_bch, layers, B, W):
 
     # Inputs converted to one-hot representations
     x_one_hot_bch = theano.map(one_hot_items, sequences=[x_bch])[0]
@@ -118,10 +136,13 @@ def n2n_network(x_bch, q_bch, A, B, C, W):
 
     u_bch = repeat_batched_dot(q_one_hot_bch, B)
 
-    o_bch = theano.map(n2n_memory_layer,
-                       sequences=[x_one_hot_bch, u_bch],
-                       non_sequences=[A, C])[0]
+    for layer in layers:
+        parameters = [layer.A, layer.C]
+        u_bch = theano.map(n2n_memory_layer,
+                           sequences=[x_one_hot_bch, u_bch],
+                           non_sequences=parameters)[0]
 
+    o_bch = u_bch
     # Answer
     a_hat = tensor.nnet.softmax(repeat_batched_dot(o_bch, W))
 
@@ -137,14 +158,20 @@ def main(mode):
 
     if mode == "train":
 
-        # Embedding weights for one layer
-        A = shared_random('A')
+        # Weights for questions and final answer
         B = fake3d_shared_random('B')
-        C = shared_random('C')
         W = fake3d_shared_random('W', shape=(1, EMBED_DIM, VOCAB_SIZE))
 
+        # per layer embedding weights
+        layers = [
+            LayerParams(1),
+            LayerParams(2),
+            LayerParams(3)
+        ]
+        # A = shared_random('A')
+        # C = shared_random('C')
         # getting an estimate
-        a_hat = n2n_network(x, q, A, B, C, W)
+        a_hat = n2n_network(x, q, layers, B, W)
 
         # Improving answer estimate
         batch_cost = tensor.nnet.categorical_crossentropy(a_hat, a).mean()
@@ -153,18 +180,25 @@ def main(mode):
         # TODO:
         # - implement gradient clipping
         # - the step rule they had
+        relevant_params = [B, W]
+        for layer in layers:
+            relevant_params.append(layer.A)
+            relevant_params.append(layer.C)
+
         optimizer = GradientDescent(cost=batch_cost,
-                                    parameters=[A, B, C, W],
-                                    step_rule=Scale(learning_rate=0.01))
+                                    parameters=relevant_params,
+                                    # step_rule=Scale(learning_rate=0.01)
+                                    step_rule=Adam()
+                                    )
         gradient_norm = aggregation.mean(optimizer.total_gradient_norm)
 
         # Feed actual data
         babi_ds = BaBiDataset(os.path.join(DATA_ROOT, "babi-task2-300stories.h5"))
-        babi_stream = default_batch_stream(babi_ds, babi_ds.num_examples)
+        babi_stream = default_batch_stream(babi_ds, 32)
 
         # train for 60 epochs, monitor cost and gradient norm, write to file
         loop_extensions = fav_extensions(60, [batch_cost, gradient_norm],
-                                         "babi-task2-60-epochs-huge-batch.tar", monitor_freq=50)
+                                         "babi-task2-60-epochs-3-layers.tar", monitor_freq=50)
         main_loop = MainLoop(algorithm=optimizer,
                              extensions=loop_extensions,
                              data_stream=babi_stream)
