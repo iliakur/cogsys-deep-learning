@@ -16,7 +16,7 @@ def fav_extensions(n_epochs, variables_of_interest, save_path, monitor_freq=1000
     return [FinishAfter(after_n_epochs=n_epochs),
             TrainingDataMonitoring(variables_of_interest,
                                    every_n_batches=monitor_freq,
-                                   after_epoch=True,
+                                   # after_epoch=True,
                                    after_training=True),
             Timing(after_epoch=True),
             Printing(every_n_batches=monitor_freq),
