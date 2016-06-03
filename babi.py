@@ -173,7 +173,7 @@ def main(mode):
     elif mode == 'test':
         # to-do: load paramdict
         model_fname = "babi-task2-60-epochs.tar"
-        param_dict = blocksIO.load_parameters(os.path.join(MODEL_ROOT, model_fname))
+        param_dict = blocksIO.load_parameter_values(os.path.join(MODEL_ROOT, model_fname))
 
         # Embedding weights for one layer
         A = param_dict('/A')
