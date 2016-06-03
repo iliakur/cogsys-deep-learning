@@ -206,16 +206,26 @@ def main(mode):
 
     elif mode == 'test':
         # to-do: load paramdict
-        model_fname = "babi-task2-60-epochs.tar"
+        model_fname = "babi-task2-60-epochs-3-layers.tar"
         param_dict = blocksIO.load_parameter_values(os.path.join(MODEL_ROOT, model_fname))
 
         # Embedding weights for one layer
-        A = theano.shared(param_dict['/A'], "A")
         B = theano.shared(param_dict['/B'], "B")
-        C = theano.shared(param_dict['/C'], "C")
         W = theano.shared(param_dict['/W'], "W")
 
-        a_hat = n2n_network(x, q, A, B, C, W)
+        layers = [
+            LayerParams(1,
+                        A=theano.shared(param_dict['/A1']),
+                        C=theano.shared(param_dict['/C1'])),
+            LayerParams(2,
+                        A=theano.shared(param_dict['/A2']),
+                        C=theano.shared(param_dict['/C2'])),
+            LayerParams(3,
+                        A=theano.shared(param_dict['/A3']),
+                        C=theano.shared(param_dict['/C3'])),
+        ]
+
+        a_hat = n2n_network(x, q, layers, B, W)
 
         qa_solver = theano.function([x, q], outputs=a_hat)
 
@@ -226,10 +236,16 @@ def main(mode):
             stories = test_data_h5['stories']
             questions = test_data_h5['questions']
             answer_prob_dists = qa_solver(stories, questions)
-            np.save('test_data_answers', answer_prob_dists)
-
-    # Return answer index
-    # return a_hat_bch.argmax()
+            # For further data munging save the probabilites
+            save_to_fname = 'test_on_train_answers'
+            print("Saving answer prob-dists to: {}".format(save_to_fname))
+            np.save(save_to_fname, answer_prob_dists)
+            # For evaluation print the percent correct
+            correct_answers = np.array(test_data_h5['answers'])
+            network_answers = answer_prob_dists.argmax(axis=1)
+            # mean of bool vector is its sum / its len
+            percent_correct = (correct_answers == network_answers).mean()
+            print("Percent correct on train data: {}%".format(percent_correct))
 
 if __name__ == '__main__':
     main("test")
