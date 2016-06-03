@@ -104,7 +104,7 @@ class LayerParams(object):
         self.set_param("A", A)
         self.set_param("C", C)
 
-    def set_param(name, value):
+    def set_param(self, name, value):
         shared_var_name = name + str(self.level)
         if value is None:
             setattr(self, name, shared_random(shared_var_name))
